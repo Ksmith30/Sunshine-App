@@ -23,7 +23,7 @@ public class WeatherDbHelper extends SQLiteOpenHelper{
 
     public static final String DATABASE_NAME = "weather.db";
 
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     public WeatherDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -33,16 +33,23 @@ public class WeatherDbHelper extends SQLiteOpenHelper{
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         final String SQL_CREATE_WEATHER_TABLE = "CREATE TABLE " +
                 WeatherContract.WeatherEntry.TABLE_NAME + " (" +
+
                 WeatherContract.WeatherEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                WeatherContract.WeatherEntry.COLUMN_DATE + "INTEGER NOT NULL, " +
-                WeatherContract.WeatherEntry.COLUMN_WEATHER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                WeatherContract.WeatherEntry.COLUMN_DEGREES + " REAL NOT NULL, " +
-                WeatherContract.WeatherEntry.COLUMN_HUMIDITY + " REAL NOT NULL, " +
-                WeatherContract.WeatherEntry.COLUMN_MAX_TEMP + " REAL NOT NULL, " +
+
+                WeatherContract.WeatherEntry.COLUMN_DATE + " INTEGER NOT NULL, " +
+
+                WeatherContract.WeatherEntry.COLUMN_WEATHER_ID + " INTEGER NOT NULL, " +
+
                 WeatherContract.WeatherEntry.COLUMN_MIN_TEMP + " REAL NOT NULL, " +
+                WeatherContract.WeatherEntry.COLUMN_MAX_TEMP + " REAL NOT NULL, " +
+
+                WeatherContract.WeatherEntry.COLUMN_HUMIDITY + " REAL NOT NULL, " +
                 WeatherContract.WeatherEntry.COLUMN_PRESSURE + " REAL NOT NULL, " +
+
                 WeatherContract.WeatherEntry.COLUMN_WIND_SPEED + " REAL NOT NULL, " +
-                "); ";
+                WeatherContract.WeatherEntry.COLUMN_DEGREES + " REAL NOT NULL, " +
+
+                " UNIQUE (" + WeatherContract.WeatherEntry.COLUMN_DATE + ") ON CONFLICT REPLACE);";
 
         sqLiteDatabase.execSQL(SQL_CREATE_WEATHER_TABLE);
     }
@@ -50,7 +57,7 @@ public class WeatherDbHelper extends SQLiteOpenHelper{
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
         final String SQL_DROP_WEATHER_TABLE = "DROP TABLE IF EXISTS " +
-                WeatherContract.WeatherEntry.TABLE_NAME + ");  ";
+                WeatherContract.WeatherEntry.TABLE_NAME;
 
         sqLiteDatabase.execSQL(SQL_DROP_WEATHER_TABLE);
         onCreate(sqLiteDatabase);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
+import static com.example.android.sunshine.data.TestUtilities.getConstantNameByStringValue;
 import static com.example.android.sunshine.data.TestUtilities.getStaticIntegerField;
 import static com.example.android.sunshine.data.TestUtilities.getStaticStringField;
 import static com.example.android.sunshine.data.TestUtilities.studentReadableClassNotFound;
@@ -143,6 +144,7 @@ public class TestSunshineDatabase {
             REFLECTED_COLUMN_WIND_DIR = getStaticStringField(weatherEntryClass, columnWindDirVariableName);
 
             weatherDbHelperClass = Class.forName(dataPackageName + weatherDbHelperName);
+
             Class weatherDbHelperSuperclass = weatherDbHelperClass.getSuperclass();
 
             if (weatherDbHelperSuperclass == null || weatherDbHelperSuperclass.equals(Object.class)) {
@@ -165,14 +167,6 @@ public class TestSunshineDatabase {
             REFLECTED_DATABASE_VERSION = getStaticIntegerField(
                     weatherDbHelperClass, databaseVersionVariableName);
 
-            int expectedDatabaseVersion = 1;
-            String databaseVersionShouldBe1 = "Database version should be "
-                    + expectedDatabaseVersion + " but isn't.";
-
-            assertEquals(databaseVersionShouldBe1,
-                    expectedDatabaseVersion,
-                    REFLECTED_DATABASE_VERSION);
-
             Constructor weatherDbHelperCtor = weatherDbHelperClass.getConstructor(Context.class);
 
             dbHelper = (SQLiteOpenHelper) weatherDbHelperCtor.newInstance(context);
@@ -193,8 +187,20 @@ public class TestSunshineDatabase {
         } catch (InstantiationException e) {
             fail(e.getMessage());
         } catch (InvocationTargetException e) {
-            fail(e.getMessage());
+
         }
+    }
+
+    @Test
+    public void testDatabaseVersionWasIncremented() {
+        int expectedDatabaseVersion = 3;
+        String databaseVersionShouldBe1 = "Database version should be "
+                + expectedDatabaseVersion + " but isn't."
+                + "\n Database version: ";
+
+        assertEquals(databaseVersionShouldBe1,
+                expectedDatabaseVersion,
+                REFLECTED_DATABASE_VERSION);
     }
 
     /**
@@ -215,6 +221,122 @@ public class TestSunshineDatabase {
      * database again. If AUTOINCREMENT isn't set up properly in the WeatherDbHelper's table
      * create statement, then the _ID of the first insert will be reused. However, if AUTOINCREMENT
      * is setup properly, that older ID will NOT be reused, and the test will pass.
+     */
+    @Test
+    public void testDuplicateDateInsertBehaviorShouldReplace() {
+
+        /* Obtain weather values from TestUtilities */
+        ContentValues testWeatherValues = TestUtilities.createTestWeatherContentValues();
+
+        /*
+         * Get the original weather ID of the testWeatherValues to ensure we use a different
+         * weather ID for our next insert.
+         */
+        long originalWeatherId = testWeatherValues.getAsLong(REFLECTED_COLUMN_WEATHER_ID);
+
+        /* Insert the ContentValues with old weather ID into database */
+        database.insert(
+                WeatherContract.WeatherEntry.TABLE_NAME,
+                null,
+                testWeatherValues);
+
+        /*
+         * We don't really care what this ID is, just that it is different than the original and
+         * that we can use it to verify our "new" weather entry has been made.
+         */
+        long newWeatherId = originalWeatherId + 1;
+
+        testWeatherValues.put(REFLECTED_COLUMN_WEATHER_ID, newWeatherId);
+
+        /* Insert the ContentValues with new weather ID into database */
+        database.insert(
+                WeatherContract.WeatherEntry.TABLE_NAME,
+                null,
+                testWeatherValues);
+
+        /* Query for a weather record with our new weather ID */
+        Cursor newWeatherIdCursor = database.query(
+                REFLECTED_TABLE_NAME,
+                new String[]{REFLECTED_COLUMN_DATE},
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        String recordWithNewIdNotFound =
+                "New record did not overwrite the previous record for the same date.";
+        assertTrue(recordWithNewIdNotFound,
+                newWeatherIdCursor.getCount() == 1);
+
+        /* Always close the cursor after you're done with it */
+        newWeatherIdCursor.close();
+    }
+
+    /**
+     >>>>>>> a6840f1... S07.03-Exercise-ConflictResolutionPolicy
+     * Tests the columns with null values cannot be inserted into the database.
+     */
+    @Test
+    public void testNullColumnConstraints() {
+        /* Use a WeatherDbHelper to get access to a writable database */
+
+        /* We need a cursor from a weather table query to access the column names */
+        Cursor weatherTableCursor = database.query(
+                REFLECTED_TABLE_NAME,
+                /* We don't care about specifications, we just want the column names */
+                null, null, null, null, null, null);
+
+        /* Store the column names and close the cursor */
+        String[] weatherTableColumnNames = weatherTableCursor.getColumnNames();
+        weatherTableCursor.close();
+
+        /* Obtain weather values from TestUtilities and make a copy to avoid altering singleton */
+        ContentValues testValues = TestUtilities.createTestWeatherContentValues();
+        /* Create a copy of the testValues to save as a reference point to restore values */
+        ContentValues testValuesReferenceCopy = new ContentValues(testValues);
+
+        for (String columnName : weatherTableColumnNames) {
+
+            /* We don't need to verify the _ID column value is not null, the system does */
+            if (columnName.equals(WeatherContract.WeatherEntry._ID)) continue;
+
+            /* Set the value to null */
+            testValues.putNull(columnName);
+
+            /* Insert ContentValues into database and get a row ID back */
+            long shouldFailRowId = database.insert(
+                    REFLECTED_TABLE_NAME,
+                    null,
+                    testValues);
+
+            String variableName = getConstantNameByStringValue(
+                    WeatherContract.WeatherEntry.class,
+                    columnName);
+
+            /* If the insert fails, which it should in this case, database.insert returns -1 */
+            String nullRowInsertShouldFail =
+                    "Insert should have failed due to a null value for column: '" + columnName + "'"
+                            + ", but didn't."
+                            + "\n Check that you've added NOT NULL to " + variableName
+                            + " in your create table statement in the WeatherEntry class."
+                            + "\n Row ID: ";
+            assertEquals(nullRowInsertShouldFail,
+                    -1,
+                    shouldFailRowId);
+
+            /* "Restore" the original value in testValues */
+            testValues.put(columnName, testValuesReferenceCopy.getAsDouble(columnName));
+        }
+
+        /* Close database */
+        dbHelper.close();
+    }
+
+    /**
+     * Tests to ensure that inserts into your database results in automatically
+     * incrementing row IDs.
+     >>>>>>> 4174cf2... S07.02-Exercise-PreventInvalidInserts
      */
     @Test
     public void testIntegerAutoincrement() {
@@ -260,10 +382,65 @@ public class TestSunshineDatabase {
     }
 
     /**
+     * This method tests the {@link WeatherDbHelper#onUpgrade(SQLiteDatabase, int, int)}. The proper
+     * behavior for this method in our case is to simply DROP (or delete) the weather table from
+     * the database and then have the table recreated.
+     */
+    @Test
+    public void testOnUpgradeBehavesCorrectly() {
+
+        testInsertSingleRecordIntoWeatherTable();
+
+        dbHelper.onUpgrade(database, 13, 14);
+
+        /*
+         * This Cursor will contain the names of each table in our database and we will use it to
+         * make sure that our weather table is still in the database after upgrading.
+         */
+        Cursor tableNameCursor = database.rawQuery(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='" + REFLECTED_TABLE_NAME + "'",
+                null);
+
+        /*
+         * Our database should only contain one table, and so the above query should have one
+         * record in the cursor that queried for our table names.
+         */
+        int expectedTableCount = 1;
+        String shouldHaveSingleTable = "There should only be one table returned from this query.";
+        assertEquals(shouldHaveSingleTable,
+                expectedTableCount,
+                tableNameCursor.getCount());
+
+        /* We are done verifying our table names, so we can close this cursor */
+        tableNameCursor.close();
+
+        Cursor shouldBeEmptyWeatherCursor = database.query(
+                REFLECTED_TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        int expectedRecordCountAfterUpgrade = 0;
+        /* We will finally verify that our weather table is empty after */
+        String weatherTableShouldBeEmpty =
+                "Weather table should be empty after upgrade, but wasn't."
+                        + "\nNumber of records: ";
+        assertEquals(weatherTableShouldBeEmpty,
+                expectedRecordCountAfterUpgrade,
+                shouldBeEmptyWeatherCursor.getCount());
+
+        /* Test is over, close the cursor */
+        database.close();
+    }
+
+    /**
      * This method tests that our database contains all of the tables that we think it should
      * contain. Although in our case, we just have one table that we expect should be added
      * <p>
-     * {@link com.example.android.sunshine.data.TABLE_NAME}.
+     * {@link com.example.android.sunshine.data.WeatherContract.WeatherEntry#TABLE_NAME}.
      * <p>
      * Despite only needing to check one table name in Sunshine, we set this method up so that
      * you can use it in other apps to test databases with more than one table.
@@ -319,7 +496,7 @@ public class TestSunshineDatabase {
         assertTrue("Error: Your database was created without the expected tables.",
                 tableNameHashSet.isEmpty());
 
-        /* Always close a cursor when you are done with it */
+        /* Always close the cursor when you are finished with it */
         tableNameCursor.close();
     }
 
@@ -345,8 +522,11 @@ public class TestSunshineDatabase {
                 testWeatherValues);
 
         /* If the insert fails, database.insert returns -1 */
+        int valueOfIdIfInsertFails = -1;
         String insertFailed = "Unable to insert into the database";
-        assertTrue(insertFailed, weatherRowId != -1);
+        assertNotSame(insertFailed,
+                valueOfIdIfInsertFails,
+                weatherRowId);
 
         /*
          * Query the database and receive a Cursor. A Cursor is the primary way to interact with
