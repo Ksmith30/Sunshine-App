@@ -45,38 +45,11 @@ import static junit.framework.Assert.assertNotSame;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
-/**
- * Used to test the database we use in Sunshine to cache weather data. Within these tests, we
- * test the following:
- * <p>
- * <p>
- * 1) Creation of the database with proper table(s)
- * 2) Insertion of single record into our weather table
- * 3) When a record is already stored in the weather table with a particular date, a new record
- * with the same date will overwrite that record.
- * 4) Verify that NON NULL constraints are working properly on record inserts
- * 5) Verify auto increment is working with the ID
- * 6) Test the onUpgrade functionality of the WeatherDbHelper
- */
 @RunWith(AndroidJUnit4.class)
 public class TestSunshineDatabase {
 
-    /*
-     * Context used to perform operations on the database and create WeatherDbHelpers.
-     */
     private final Context context = InstrumentationRegistry.getTargetContext();
 
-    /*
-     * In order to verify that you have set up your classes properly and followed our TODOs, we
-     * need to create what's called a Change Detector Test. In almost any other situation, these
-     * tests are discouraged, as they provide no real value in a production setting. However, using
-     * reflection to verify that you have set your classes up correctly will help provide more
-     * useful errors if you've missed a step in our instructions.
-     *
-     * Additionally, using reflection for these tests allows you to run the tests when they
-     * normally wouldn't compile, as they depend on pieces of your classes that you might not
-     * have created when you initially run the tests.
-     */
     private static final String packageName = "com.example.android.sunshine";
     private static final String dataPackageName = packageName + ".data";
 
@@ -203,58 +176,28 @@ public class TestSunshineDatabase {
                 REFLECTED_DATABASE_VERSION);
     }
 
-    /**
-     * Tests to ensure that inserts into your database results in automatically incrementing row
-     * IDs and that row IDs are not reused.
-     * <p>
-     * If the INTEGER PRIMARY KEY column is not explicitly given a value, then it will be filled
-     * automatically with an unused integer, usually one more than the largest _ID currently in
-     * use. This is true regardless of whether or not the AUTOINCREMENT keyword is used.
-     * <p>
-     * If the AUTOINCREMENT keyword appears after INTEGER PRIMARY KEY, that changes the automatic
-     * _ID assignment algorithm to prevent the reuse of _IDs over the lifetime of the database.
-     * In other words, the purpose of AUTOINCREMENT is to prevent the reuse of _IDs from previously
-     * deleted rows.
-     * <p>
-     * To test this, we first insert a row into the database and get its _ID. Then, we'll delete
-     * that row, change the data that we're going to insert, and insert the changed data into the
-     * database again. If AUTOINCREMENT isn't set up properly in the WeatherDbHelper's table
-     * create statement, then the _ID of the first insert will be reused. However, if AUTOINCREMENT
-     * is setup properly, that older ID will NOT be reused, and the test will pass.
-     */
+
     @Test
     public void testDuplicateDateInsertBehaviorShouldReplace() {
 
-        /* Obtain weather values from TestUtilities */
         ContentValues testWeatherValues = TestUtilities.createTestWeatherContentValues();
 
-        /*
-         * Get the original weather ID of the testWeatherValues to ensure we use a different
-         * weather ID for our next insert.
-         */
         long originalWeatherId = testWeatherValues.getAsLong(REFLECTED_COLUMN_WEATHER_ID);
 
-        /* Insert the ContentValues with old weather ID into database */
         database.insert(
                 WeatherContract.WeatherEntry.TABLE_NAME,
                 null,
                 testWeatherValues);
 
-        /*
-         * We don't really care what this ID is, just that it is different than the original and
-         * that we can use it to verify our "new" weather entry has been made.
-         */
         long newWeatherId = originalWeatherId + 1;
 
         testWeatherValues.put(REFLECTED_COLUMN_WEATHER_ID, newWeatherId);
 
-        /* Insert the ContentValues with new weather ID into database */
         database.insert(
                 WeatherContract.WeatherEntry.TABLE_NAME,
                 null,
                 testWeatherValues);
 
-        /* Query for a weather record with our new weather ID */
         Cursor newWeatherIdCursor = database.query(
                 REFLECTED_TABLE_NAME,
                 new String[]{REFLECTED_COLUMN_DATE},
@@ -269,42 +212,27 @@ public class TestSunshineDatabase {
         assertTrue(recordWithNewIdNotFound,
                 newWeatherIdCursor.getCount() == 1);
 
-        /* Always close the cursor after you're done with it */
         newWeatherIdCursor.close();
     }
 
-    /**
-     >>>>>>> a6840f1... S07.03-Exercise-ConflictResolutionPolicy
-     * Tests the columns with null values cannot be inserted into the database.
-     */
     @Test
     public void testNullColumnConstraints() {
-        /* Use a WeatherDbHelper to get access to a writable database */
-
-        /* We need a cursor from a weather table query to access the column names */
         Cursor weatherTableCursor = database.query(
                 REFLECTED_TABLE_NAME,
-                /* We don't care about specifications, we just want the column names */
                 null, null, null, null, null, null);
 
-        /* Store the column names and close the cursor */
         String[] weatherTableColumnNames = weatherTableCursor.getColumnNames();
         weatherTableCursor.close();
 
-        /* Obtain weather values from TestUtilities and make a copy to avoid altering singleton */
         ContentValues testValues = TestUtilities.createTestWeatherContentValues();
-        /* Create a copy of the testValues to save as a reference point to restore values */
         ContentValues testValuesReferenceCopy = new ContentValues(testValues);
 
         for (String columnName : weatherTableColumnNames) {
 
-            /* We don't need to verify the _ID column value is not null, the system does */
             if (columnName.equals(WeatherContract.WeatherEntry._ID)) continue;
 
-            /* Set the value to null */
             testValues.putNull(columnName);
 
-            /* Insert ContentValues into database and get a row ID back */
             long shouldFailRowId = database.insert(
                     REFLECTED_TABLE_NAME,
                     null,
@@ -314,7 +242,6 @@ public class TestSunshineDatabase {
                     WeatherContract.WeatherEntry.class,
                     columnName);
 
-            /* If the insert fails, which it should in this case, database.insert returns -1 */
             String nullRowInsertShouldFail =
                     "Insert should have failed due to a null value for column: '" + columnName + "'"
                             + ", but didn't."
@@ -325,51 +252,34 @@ public class TestSunshineDatabase {
                     -1,
                     shouldFailRowId);
 
-            /* "Restore" the original value in testValues */
             testValues.put(columnName, testValuesReferenceCopy.getAsDouble(columnName));
         }
 
-        /* Close database */
         dbHelper.close();
     }
 
-    /**
-     * Tests to ensure that inserts into your database results in automatically
-     * incrementing row IDs.
-     >>>>>>> 4174cf2... S07.02-Exercise-PreventInvalidInserts
-     */
     @Test
     public void testIntegerAutoincrement() {
 
-        /* First, let's ensure we have some values in our table initially */
         testInsertSingleRecordIntoWeatherTable();
 
-        /* Obtain weather values from TestUtilities */
         ContentValues testWeatherValues = TestUtilities.createTestWeatherContentValues();
 
-        /* Get the date of the testWeatherValues to ensure we use a different date later */
         long originalDate = testWeatherValues.getAsLong(REFLECTED_COLUMN_DATE);
 
-        /* Insert ContentValues into database and get a row ID back */
         long firstRowId = database.insert(
                 REFLECTED_TABLE_NAME,
                 null,
                 testWeatherValues);
 
-        /* Delete the row we just inserted to see if the database will reuse the rowID */
         database.delete(
                 REFLECTED_TABLE_NAME,
                 "_ID == " + firstRowId,
                 null);
 
-        /*
-         * Now we need to change the date associated with our test content values because the
-         * database policy is to replace identical dates on conflict.
-         */
         long dayAfterOriginalDate = originalDate + TimeUnit.DAYS.toMillis(1);
         testWeatherValues.put(REFLECTED_COLUMN_DATE, dayAfterOriginalDate);
 
-        /* Insert ContentValues into database and get another row ID back */
         long secondRowId = database.insert(
                 REFLECTED_TABLE_NAME,
                 null,
