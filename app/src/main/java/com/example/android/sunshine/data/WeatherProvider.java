@@ -42,31 +42,46 @@ public class WeatherProvider extends ContentProvider {
 
         switch (match) {
             case CODE_WEATHER:
-                cursor = db.query(
-                        WeatherContract.WeatherEntry.TABLE_NAME,
-                        projection,
-                        selection,
-                        selectionArgs,
-                        null,
-                        null,
-                        sortOrder);
+                cursor = queryWeather(db, projection, selection, selectionArgs, sortOrder);
                 break;
             case CODE_WEATHER_WITH_DATE:
-                String normalizedUtcDateString = uri.getLastPathSegment();
-                String[] selectionArguments = new String[]{normalizedUtcDateString};
-                cursor = db.query(
-                        WeatherContract.WeatherEntry.TABLE_NAME,
-                        projection,
-                        WeatherContract.WeatherEntry.COLUMN_DATE + " = ?",
-                         selectionArguments,
-                        null,
-                        null,
-                        sortOrder);
+                cursor = queryWeatherWithDate(db, uri, projection, sortOrder);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri" + uri);
         }
         cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return cursor;
+    }
+
+    public Cursor queryWeather(SQLiteDatabase db, @Nullable String[] projection, @Nullable String selection,
+                              @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+        Cursor cursor;
+        cursor = db.query(
+                WeatherContract.WeatherEntry.TABLE_NAME,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                sortOrder);
+
+        return cursor;
+    }
+
+    public Cursor queryWeatherWithDate(SQLiteDatabase db, @NonNull Uri uri, @Nullable String[] projection,
+                                       @Nullable String sortOrder) {
+        Cursor cursor;
+        String normalizedUtcDateString = uri.getLastPathSegment();
+        String[] selectionArguments = new String[]{normalizedUtcDateString};
+        cursor = db.query(
+                WeatherContract.WeatherEntry.TABLE_NAME,
+                projection,
+                WeatherContract.WeatherEntry.COLUMN_DATE + " = ?",
+                selectionArguments,
+                null,
+                null,
+                sortOrder);
         return cursor;
     }
 
