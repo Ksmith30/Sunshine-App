@@ -1,6 +1,7 @@
 package com.example.android.sunshine.data;
 
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
@@ -96,29 +97,37 @@ public class WeatherProvider extends ContentProvider {
 
             case CODE_WEATHER:
                 db.beginTransaction();
-                try {
-                    for (ContentValues cv : values) {
-                        long weatherDate =
-                                cv.getAsLong(WeatherContract.WeatherEntry.COLUMN_DATE);
-                        if (!SunshineDateUtils.isDateNormalized(weatherDate)) {
-                            throw new IllegalArgumentException("Date must be normalized to insert!");
-                        }
-
-                        long _id = db.insert(WeatherContract.WeatherEntry.TABLE_NAME, null, cv);
-                        if (_id != -1) {
-                            rowsInserted++;
-                        }
-                    }
-                    db.setTransactionSuccessful();
-                } finally {
-                    db.endTransaction();
-                }
-                if (rowsInserted > 0) {
-                    getContext().getContentResolver().notifyChange(uri, null);
-                }
+                rowsInserted = bulkInsertWeather(values, db, rowsInserted, uri);
                 return rowsInserted;
             default:
                 return super.bulkInsert(uri, values);
+        }
+    }
+
+    public int bulkInsertWeather(ContentValues[] values, SQLiteDatabase db, int rowsInserted, Uri uri) {
+        try {
+            for (ContentValues cv : values) {
+                checkWeather(cv);
+                long _id = db.insert(WeatherContract.WeatherEntry.TABLE_NAME, null, cv);
+                if (_id != -1) {
+                    rowsInserted++;
+                }
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+        if (rowsInserted > 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        return rowsInserted;
+    }
+
+    public void checkWeather(ContentValues contentValues) {
+        long weatherDate =
+                contentValues.getAsLong(WeatherContract.WeatherEntry.COLUMN_DATE);
+        if (!SunshineDateUtils.isDateNormalized(weatherDate)) {
+            throw new IllegalArgumentException("Date must be normalized to insert!");
         }
     }
 
