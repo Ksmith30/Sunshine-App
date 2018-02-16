@@ -39,6 +39,7 @@
       - or something similar.                                                                    -
       - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <string name="app_name">Sunshine</string>
+    <string name ="manifest_authorities"> com.example.android.sunshine </string>
 
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       - By convention, "action" denotes that this String will be used as the label for an        -

@@ -9,6 +9,8 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.example.android.sunshine.utilities.SunshineDateUtils;
+
 public class WeatherProvider extends ContentProvider {
 
     private static final int CODE_WEATHER = 10;
@@ -83,6 +85,41 @@ public class WeatherProvider extends ContentProvider {
                 null,
                 sortOrder);
         return cursor;
+    }
+
+    @Override
+    public int bulkInsert(@NonNull Uri uri, @NonNull ContentValues[] values) {
+        int rowsInserted = 0;
+        final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+
+        switch (sURIMatcher.match(uri)) {
+
+            case CODE_WEATHER:
+                db.beginTransaction();
+                try {
+                    for (ContentValues cv : values) {
+                        long weatherDate =
+                                cv.getAsLong(WeatherContract.WeatherEntry.COLUMN_DATE);
+                        if (!SunshineDateUtils.isDateNormalized(weatherDate)) {
+                            throw new IllegalArgumentException("Date must be normalized to insert!");
+                        }
+
+                        long _id = db.insert(WeatherContract.WeatherEntry.TABLE_NAME, null, cv);
+                        if (_id != -1) {
+                            rowsInserted++;
+                        }
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+                if (rowsInserted > 0) {
+                    getContext().getContentResolver().notifyChange(uri, null);
+                }
+                return rowsInserted;
+            default:
+                return super.bulkInsert(uri, values);
+        }
     }
 
     @Nullable
