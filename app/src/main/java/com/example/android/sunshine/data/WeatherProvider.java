@@ -17,8 +17,8 @@ public class WeatherProvider extends ContentProvider {
 
     WeatherDbHelper mOpenHelper;
 
-    private static UriMatcher buildUriMatcher() {
-        UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+    public static UriMatcher buildUriMatcher() {
+        final UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
         uriMatcher.addURI(WeatherContract.AUTHORITY, WeatherContract.PATH_WEATHER, CODE_WEATHER);
         uriMatcher.addURI(WeatherContract.AUTHORITY, WeatherContract.PATH_WEATHER + "/#", CODE_WEATHER_WITH_DATE);
@@ -42,14 +42,31 @@ public class WeatherProvider extends ContentProvider {
 
         switch (match) {
             case CODE_WEATHER:
-                cursor = db.query(WeatherContract.WeatherEntry.TABLE_NAME, projection, selection,
-                        selectionArgs, null, null, null, sortOrder);
+                cursor = db.query(
+                        WeatherContract.WeatherEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        sortOrder);
                 break;
             case CODE_WEATHER_WITH_DATE:
-                String id = uri.getPathSegments().get(1);
-                //cursor = db.query(WeatherContract.WeatherEntry.TABLE_NAME, projection, )
-
+                String normalizedUtcDateString = uri.getLastPathSegment();
+                String[] selectionArguments = new String[]{normalizedUtcDateString};
+                cursor = db.query(
+                        WeatherContract.WeatherEntry.TABLE_NAME,
+                        projection,
+                        WeatherContract.WeatherEntry.COLUMN_DATE + " = ?",
+                         selectionArguments,
+                        null,
+                        null,
+                        sortOrder);
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri" + uri);
         }
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
         return cursor;
     }
 
