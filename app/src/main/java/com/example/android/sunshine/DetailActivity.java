@@ -1,9 +1,9 @@
 package com.example.android.sunshine;
 
-import android.app.LoaderManager;
-import android.content.CursorLoader;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
+import android.support.v4.content.CursorLoader;
 import android.content.Intent;
-import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -19,10 +19,8 @@ import com.example.android.sunshine.data.WeatherContract;
 import com.example.android.sunshine.utilities.SunshineDateUtils;
 import com.example.android.sunshine.utilities.SunshineWeatherUtils;
 
-import org.w3c.dom.Text;
-
-@RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
-public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class DetailActivity extends AppCompatActivity implements
+        LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
 
@@ -38,14 +36,14 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             WeatherContract.WeatherEntry.COLUMN_DEGREES
     };
 
-    private static final int COLUMN_DATE = 1;
-    private static final int COLUMN_WEATHER = 2;
-    private static final int COLUMN_HIGH = 3;
-    private static final int COLUMN_LOW = 4;
-    private static final int COLUMN_HUMIDITY = 5;
-    private static final int COLUMN_WIND = 6;
-    private static final int COLUMN_PRESSURE = 7;
-    private static final int COLUMN_DEGREES = 8;
+    private static final int COLUMN_DATE = 0;
+    private static final int COLUMN_WEATHER = 1;
+    private static final int COLUMN_HIGH = 2;
+    private static final int COLUMN_LOW = 3;
+    private static final int COLUMN_HUMIDITY = 4;
+    private static final int COLUMN_WIND = 5;
+    private static final int COLUMN_PRESSURE = 6;
+    private static final int COLUMN_DEGREES = 7;
 
     private static final int LOADER_ID = 84;
 
@@ -72,8 +70,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mWind = (TextView) findViewById(R.id.selected_day_wind);
         mPressure = (TextView) findViewById(R.id.selected_day_pressure);
 
-        Intent intentThatStartedThisActivity = getIntent();
-        mUri = intentThatStartedThisActivity.getData();
+        mUri = getIntent().getData();
         if (mUri == null) {
             throw new NullPointerException("There is no Uri in the intent!");
         }
@@ -122,6 +119,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                         null,
                         null,
                         null);
+
+
             default:
                 throw new RuntimeException("Loader Not Implemented" + LOADER_ID);
         }

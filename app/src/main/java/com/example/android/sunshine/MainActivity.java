@@ -149,12 +149,13 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onClick(String weatherForDay) {
+    public void onClick(long date) {
         Context context = this;
         Class destinationClass = DetailActivity.class;
-        Intent intentToStartDetailActivity = new Intent(context, destinationClass);
-        intentToStartDetailActivity.putExtra(Intent.EXTRA_TEXT, weatherForDay);
-        startActivity(intentToStartDetailActivity);
+        Intent weatherDetailIntent = new Intent(context, destinationClass);
+        Uri uriForDateClicked = WeatherContract.WeatherEntry.buildWeatherUriWithDate(date);
+        weatherDetailIntent.setData(uriForDateClicked);
+        startActivity(weatherDetailIntent);
     }
 
     private void showWeatherDataView() {
