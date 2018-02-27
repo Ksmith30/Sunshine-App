@@ -52,5 +52,9 @@
             android:authorities="@string/manifest_authorities"
             android:exported="false"
             />
+
+        <service android:name=".sync.SunshineSyncIntentService"
+            android:exported="false">
+        </service>
     </application>
 </manifest>

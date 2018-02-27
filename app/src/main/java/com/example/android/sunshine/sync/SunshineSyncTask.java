@@ -17,7 +17,9 @@ public class SunshineSyncTask {
             URL weatherRequestURL = NetworkUtils.getUrl(context);
             String jsonWeatherResponse = NetworkUtils.getResponseFromHttpUrl(weatherRequestURL);
 
-            ContentValues[] weatherValues = OpenWeatherJsonUtils.g
+            ContentValues[] weatherValues = OpenWeatherJsonUtils
+                    .getWeatherContentValuesFromJson(context, jsonWeatherResponse);
+
             if (weatherValues != null && weatherValues.length != 0) {
                 ContentResolver sunshineContentResolver = context.getContentResolver();
 
