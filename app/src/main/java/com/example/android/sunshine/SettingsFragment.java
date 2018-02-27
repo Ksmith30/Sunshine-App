@@ -10,6 +10,9 @@ import android.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.preference.PreferenceScreen;
 
 import com.example.android.sunshine.data.SunshinePreferences;
+import com.example.android.sunshine.sync.SunshineSyncIntentService;
+import com.example.android.sunshine.sync.SunshineSyncUtils;
+
 /**
  * The SettingsFragment serves as the display for all of the user's settings. In Sunshine, the
  * user will be able to change their preference for units of measurement from metric to imperial,
@@ -80,6 +83,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
             // we've changed the location
             // Wipe out any potential PlacePicker latlng values so that we can use this text entry.
             SunshinePreferences.resetLocationCoordinates(activity);
+            SunshineSyncUtils.startImmediateSync();
         }
         Preference preference = findPreference(key);
         if (null != preference) {
