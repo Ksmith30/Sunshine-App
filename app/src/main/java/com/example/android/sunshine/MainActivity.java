@@ -36,9 +36,7 @@ import android.widget.ProgressBar;
 
 import com.example.android.sunshine.data.SunshinePreferences;
 import com.example.android.sunshine.data.WeatherContract;
-import com.example.android.sunshine.sync.SunshineSyncIntentService;
 import com.example.android.sunshine.sync.SunshineSyncUtils;
-import com.example.android.sunshine.utilities.FakeDataUtils;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -92,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements
 
         showLoading();
         getSupportLoaderManager().initLoader(FORECAST_LOADER_ID, null, this);
-        SunshineSyncUtils.startImmediateSync();
+        SunshineSyncUtils.initialize(this);
     }
 
     @SuppressLint("StaticFieldLeak")
