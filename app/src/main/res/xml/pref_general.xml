@@ -32,4 +32,7 @@
         android:key="@string/pref_units_key"
         android:title="@string/pref_units_label" />
 
+    <CheckBoxPreference
+        android:defaultValue="@bool/show_notification"/>
+
 </PreferenceScreen>
