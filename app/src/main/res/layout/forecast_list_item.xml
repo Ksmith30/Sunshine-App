@@ -14,25 +14,72 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:orientation="vertical">
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_margin="16dp"
+    android:orientation="vertical">
 
     <!-- This TextView holds the weather data for one particular day in the forecast -->
-    <TextView
-        android:id="@+id/tv_weather_data"
-        style="@style/TextAppearance.AppCompat.Large"
+    <ImageView
+        android:contentDescription="@string/content_description_weather_icon"
+        android:id="@+id/weather_icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"/>
+        tools:src="@drawable/art_light_clouds"
+        />
 
-    <!-- This View serves as a visual divider between list items -->
+
+    <TextView
+        android:id="@+id/weather_date"
+        style="@style/TextAppearance.AppCompat.Body1"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginStart="8dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toRightOf="@id/weather_icon"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Today, December 5"
+        android:layout_marginLeft="8dp" />
+
+    <TextView
+        android:id="@+id/tv_weather_description"
+        style="@style/TextAppearance.AppCompat.Body1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/darker_gray"
+        app:layout_constraintStart_toStartOf="@+id/weather_date"
+        app:layout_constraintTop_toBottomOf="@+id/weather_date"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="Light Rain" />
+
+    <TextView
+        android:id="@+id/weather_high"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintHorizontal_bias="0.88"
+        app:layout_constraintLeft_toRightOf="@+id/tv_weather_description"
+        app:layout_constraintRight_toRightOf="@id/weather_low"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="18&#176;" />
+
+    <TextView
+        android:id="@+id/weather_low"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="13&#176;"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toRightOf="@+id/weather_high"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#dadada"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp" />
+        />
 
-</LinearLayout>
+</android.support.constraint.ConstraintLayout>
